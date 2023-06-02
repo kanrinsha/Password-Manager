@@ -5,44 +5,40 @@ import yaml
 class Vault:
     def vault_pass(self):
         encryption_key = get_config("key")
-        try:
-            self.name = input("Name: ")
-            self.user = input("Username: ")
-            self.password = input("Password: ")
-            self.note = input("Note? (leave blank if N/A): ")
+        self.name = input("Name: ")
+        self.user = input("Username: ")
+        self.password = input("Password: ")
+        self.note = input("Note? (leave blank if N/A): ")
 
-            new_vault_entry = {
-                self.name: {
-                    'note': self.note,
-                    'username': self.user,
-                    'password': self.password
-                }
+        new_vault_entry = {
+            self.name: {
+                'note': self.note,
+                'username': self.user,
+                'password': self.password
             }
-            # overwrite
-            with open('vault.yml', 'r') as yaml_file_read:
-                data = yaml.safe_load(yaml_file_read)
-                if data is not None and self.name in data:
-                    while True:
-                        do_overwrite = input("Name already exists, overwrite? Y/N: ")
-                        if do_overwrite.lower() == "y":
-                            data[self.name] = {
-                                    'note': self.note,
-                                    'username': self.user,
-                                    'password': self.password
-                                }
+        }
+        # overwrite
+        with open('vault.yml', 'r') as yaml_file_read:
+            data = yaml.safe_load(yaml_file_read)
+            if data is not None and self.name in data:
+                while True:
+                    do_overwrite = input("Name already exists, overwrite? Y/N: ")
+                    if do_overwrite.lower() == "y":
+                        data[self.name] = {
+                                'note': self.note,
+                                'username': self.user,
+                                'password': self.password
+                            }
 
-                            with open('vault.yml', 'w') as yaml_file:
-                                yaml.safe_dump(data, yaml_file)
-                            return
-                        elif do_overwrite.lower() == "n":
-                            return
-                # write
-                else:
-                    with open('vault.yml', 'a') as yaml_file:
-                        yaml.safe_dump(new_vault_entry, yaml_file)
-
-        except Exception as e:
-            print(e.args)
+                        with open('vault.yml', 'w') as yaml_file:
+                            yaml.safe_dump(data, yaml_file)
+                        return
+                    elif do_overwrite.lower() == "n":
+                        return
+            # write
+            else:
+                with open('vault.yml', 'a') as yaml_file:
+                    yaml.safe_dump(new_vault_entry, yaml_file)
 
     def get_pass(self):
         self.key_to_get = input("Name to get: ")

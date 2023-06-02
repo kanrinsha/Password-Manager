@@ -68,7 +68,6 @@ class Vault:
 \____|__  /\____/____  > |__| |__|___|  /\___  / 
         \/           \/               \//_____/  
 
-           S e c u r e P a s s     🔒
            """)
 
 
@@ -80,9 +79,9 @@ def get_config(key):
 if __name__ == '__main__':
     vault = Vault()
 
-    print("""To use SecurePass, follow the instructions below:
+    print("""To use, follow the instructions below:
 To vault a password, press 'v' and provide the necessary details.
-To retrieve a password, press 'g' and enter the appropriate credentials.
+To retrieve a password, press 'r' and enter the appropriate credentials.
 If using encryption, remember to keep your master password safe and secure, as it is the key to accessing your encrypted vault.
 """)
 
@@ -91,7 +90,7 @@ If using encryption, remember to keep your master password safe and secure, as i
         if user_input == "v":
             vault.vault_pass()
             break
-        elif user_input == "g":
+        elif user_input == "r":
             vault.get_pass()
             break
         else:

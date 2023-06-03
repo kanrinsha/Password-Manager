@@ -1,6 +1,6 @@
 # !/usr/bin/env python3
 import yaml
-from cryptography.fernet import Fernet
+from cryptography.fernet import Fernet, InvalidToken
 
 
 class Vault:
@@ -76,28 +76,51 @@ class Vault:
 
                             with open('vault.yml', 'w') as yaml_file:
                                 yaml.safe_dump(data, yaml_file)
+                                print("Overwritten.")
                             return
                         elif do_overwrite == "n":
                             return
         # write
         with open('vault.yml', 'a') as yaml_file:
             yaml.safe_dump(self.new_vault_entry, yaml_file)
+            print("Password saved.")
 
     def get_pass(self):
         self.key_to_get = input("Name to get: ")
-        is_encrypted = input("Encryption key? (leave blank if none): ")
+
+        while True:
+            is_using_encryption = input("Using encryption? Y/N: ").lower()
+            if is_using_encryption == "y":
+                try:
+                    with open('key.yml', 'r') as file:
+                        self.is_encrypted = yaml.safe_load(file)
+                        print("Key is: " + self.is_encrypted)
+                except Exception as e:
+                    self.is_encrypted = input("Encryption key? (leave blank if none): ")
+                break
+            if is_using_encryption == "n":
+                self.is_encrypted = None
+                break
 
         with open('vault.yml', 'r') as file:
             data = yaml.safe_load(file)
 
-        if len(is_encrypted) > 1:
-            self.cipher_suite = Fernet(is_encrypted)
+        if self.is_encrypted is not None and len(self.is_encrypted) > 1:
+            try:
+                self.cipher_suite = Fernet(self.is_encrypted)
+            except Exception:
+                print("Invalid encryption token.")
+                return
 
-            if data is not None and self.key_to_get in data:
-                for x in data[self.key_to_get]:
-                    print(str(self.cipher_suite.decrypt(data[self.key_to_get][x]).decode('utf-8')))
-            else:
-                print(f"{self.key_to_get} is not found")
+            try:
+                if data is not None and self.key_to_get in data:
+                    for x in data[self.key_to_get]:
+                        print(str(self.cipher_suite.decrypt(data[self.key_to_get][x]).decode('utf-8')))
+                else:
+                    print(f"{self.key_to_get} is not found")
+            except InvalidToken:
+                print("Invalid encryption token.")
+                return
         else:
             if data is not None and self.key_to_get in data:
                 print("\n" + yaml.safe_dump(data[self.key_to_get]))
@@ -113,15 +136,36 @@ class Vault:
         self.do_encrypt = None
         self.cipher_suite = None
         self.new_vault_entry = None
-        print("""   
-   _____                     __  .__                
-  /  _  \   ____   _______/  |_|__| ____    ____  
- /  /_\  \ /  _ \ /  ___/\   __\  |/    \  / ___\ 
-/    |    (  <_> )\___ \  |  | |  |   |  \/ /_/  >
-\____|__  /\____/____  > |__| |__|___|  /\___  / 
-        \/           \/               \//_____/  
-
-           """)
+        self.is_encrypted = None
+        print("""
+                 \ __
+--==/////////////[})))==*
+                 / \ '          ,|
+                    `\`\      //|                             ,|
+                      \ `\  //,/'                           -~ |
+   )             _-~~~\  |/ / |'|                       _-~  / ,
+  ((            /' )   | \ / /'/                    _-~   _/_-~|
+ (((            ;  /`  ' )/ /''                 _ -~     _-~ ,/'
+ ) ))           `~~\   `\\/'/|'           __--~~__--\ _-~  _/, 
+((( ))            / ~~    \ /~      __--~~  --~~  __/~  _-~ /
+ ((\~\           |    )   | '      /        __--~~  \-~~ _-~
+    `\(\    __--(   _/    |'\     /     --~~   __--~' _-~ ~|
+     (  ((~~   __-~        \~\   /     ___---~~  ~~\~~__--~ 
+      ~~\~~~~~~   `\-~      \~\ /           __--~~~'~~/
+                   ;\ __.-~  ~-/      ~~~~~__\__---~~ _..--._
+                   ;;;;;;;;'  /      ---~~~/_.-----.-~  _.._ ~\     
+                  ;;;;;;;'   /      ----~~/         `\,~    `\ \        
+                  ;;;;'     (      ---~~/         `:::|       `\\.      
+                  |'  _      `----~~~~'      /      `:|        ()))),      
+            ______/\/~    |                 /        /         (((((())  
+          /~;;.____/;;'  /          ___.---(   `;;;/             )))'`))
+         / //  _;______;'------~~~~~    |;;/\    /                ((   ( 
+        //  \ \                        /  |  \;;,\                 `   
+       (<_    \ \                    /',/-----'  _> 
+        \_|     \\_                 //~;~~~~~~~~~ 
+                 \_|               (,~~   -Tua Xiong
+                                    \~\
+                                     ~~""")
 
 
 def generate_key():
@@ -144,13 +188,29 @@ def get_key():
         print(data)
 
 
+def set_key():
+    key_to_set = input("Type key: ")
+    with open('key.yml', 'w') as file:
+        yaml.safe_dump(str(key_to_set), file)
+
+
+def remove_key():
+    key_to_set = input("Are you sure? Type 'Yes I am sure' to continue: ")
+    if str(key_to_set) != "Yes I am sure":
+        return
+    open('key.yml', 'w').close()
+
+
 if __name__ == '__main__':
     vault = Vault()
 
     print("""To use, follow the instructions below:
 To vault a password, press 'v' and provide the necessary details.
 To retrieve a password, press 'r' and enter the appropriate credentials.
-Press 'g' to generate an encryption key
+To generate an encryption key, press 'g'.
+To get the current stored encryption key, type 'get key'.
+To change the current stored encryption key, type 'set key'.
+To remove the current encryption key, type 'remove key'.
 If using encryption, remember to keep your master password safe and secure, as it is the key to accessing your encrypted vault.
 """)
 
@@ -158,13 +218,15 @@ If using encryption, remember to keep your master password safe and secure, as i
         user_input = input(": ").lower()
         if user_input == "v":
             vault.vault_pass()
-            break
         elif user_input == "r":
             vault.get_pass()
-            break
         elif user_input == "g":
             generate_key()
         elif user_input == "get key":
             get_key()
+        elif user_input == "set key":
+            set_key()
+        elif user_input == "remove key":
+            remove_key()
         else:
             print("Incorrect input.")
